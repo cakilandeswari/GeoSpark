@@ -884,6 +884,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#st_numgeometries" title="ST_NumGeometries" class="md-nav__link">
+    ST_NumGeometries
+  </a>
+  
+</li>
+      
       
       
       
@@ -1363,6 +1370,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#st_numgeometries" title="ST_NumGeometries" class="md-nav__link">
+    ST_NumGeometries
+  </a>
+  
+</li>
+      
       
       
       
@@ -1555,6 +1569,21 @@ The new coordinates will only have 9 decimal places.</p>
 <span class="k">FROM</span> <span class="n">polygondf</span>
 <span class="o">````</span>
 
+<span class="o">##</span> <span class="n">ST_LineMerge</span>
+
+<span class="n">Introduction</span><span class="p">:</span> <span class="k">Returns</span> <span class="n">a</span> <span class="n">LineString</span> <span class="n">formed</span> <span class="k">by</span> <span class="n">sewing</span> <span class="n">together</span> <span class="n">the</span> <span class="n">constituent</span> <span class="n">line</span> <span class="k">work</span> <span class="k">of</span> <span class="n">a</span> <span class="n">MULTILINESTRING</span><span class="p">.</span>
+
+<span class="n">Note</span><span class="p">:</span> <span class="k">Only</span> <span class="n">works</span> <span class="k">for</span> <span class="n">MULTILINESTRING</span><span class="p">.</span> <span class="k">Using</span> <span class="n">other</span> <span class="n">geometry</span> <span class="n">will</span> <span class="k">return</span> <span class="n">a</span> <span class="n">GEOMETRYCOLLECTION</span> <span class="n">EMPTY</span><span class="p">.</span> <span class="k">If</span> <span class="n">the</span> <span class="n">MultiLineString</span> <span class="n">can</span><span class="err">&#39;</span><span class="n">t</span> <span class="n">be</span> <span class="n">merged</span><span class="p">,</span> <span class="n">the</span> <span class="n">original</span> <span class="n">MULTILINESTRING</span> <span class="k">is</span> <span class="n">returned</span><span class="p">.</span>
+
+<span class="n">Format</span><span class="p">:</span> <span class="o">`</span><span class="n">ST_LineMerge</span> <span class="p">(</span><span class="n">A</span><span class="p">:</span><span class="n">geometry</span><span class="p">)</span><span class="o">`</span>
+
+<span class="n">Since</span><span class="p">:</span> <span class="o">`</span><span class="n">v1</span><span class="p">.</span><span class="mi">3</span><span class="p">.</span><span class="mi">2</span><span class="o">`</span>
+
+<span class="o">````</span>
+<span class="k">SELECT</span> <span class="n">ST_LineMerge</span><span class="p">(</span><span class="n">geometry</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">df</span>
+<span class="o">````</span>
+
 <span class="o">##</span> <span class="n">ST_Azimuth</span>
 
 <span class="n">Introduction</span><span class="p">:</span> <span class="k">Returns</span> <span class="n">Azimuth</span> <span class="k">for</span> <span class="n">two</span> <span class="n">given</span> <span class="n">points</span> <span class="k">in</span> <span class="n">radians</span> <span class="k">null</span> <span class="n">otherwise</span><span class="p">.</span>
@@ -1565,6 +1594,7 @@ The new coordinates will only have 9 decimal places.</p>
 
 <span class="n">Spark</span> <span class="k">SQL</span> <span class="n">example</span><span class="p">:</span>
 <span class="o">```</span><span class="k">SQL</span>
+
 <span class="k">SELECT</span> <span class="n">ST_Azimuth</span><span class="p">(</span><span class="n">ST_POINT</span><span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span> <span class="mi">25</span><span class="p">.</span><span class="mi">0</span><span class="p">),</span> <span class="n">ST_POINT</span><span class="p">(</span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span> <span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">))</span>
 
 <span class="mi">3</span><span class="p">.</span><span class="mi">141592653589793</span>
@@ -1711,6 +1741,13 @@ itself, if the geometry is collection or multi it returns record for each of col
 
 <span class="k">true</span>
 </pre></div></p>
+<h2 id="st_numgeometries">ST_NumGeometries<a class="headerlink" href="#st_numgeometries" title="Permanent link">&para;</a></h2>
+<p>Introduction: Returns the number of Geometries. If geometry is a GEOMETRYCOLLECTION (or MULTI*) return the number of geometries, for single geometries will return 1.</p>
+<p>Format: <code class="codehilite">ST_NumGeometries (A:geometry)</code></p>
+<p>Since: <code class="codehilite">v1.3.2</code></p>
+<div class="codehilite"><pre><span></span><span class="k">SELECT</span> <span class="n">ST_NumGeometries</span><span class="p">(</span><span class="n">df</span><span class="p">.</span><span class="n">geometry</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">df</span>
+</pre></div>
                 
                   
                 

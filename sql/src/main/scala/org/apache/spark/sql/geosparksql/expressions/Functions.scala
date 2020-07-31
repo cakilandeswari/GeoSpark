@@ -30,6 +30,7 @@ import org.apache.spark.sql.catalyst.expressions.{Expression, Generator}
 import org.apache.spark.sql.catalyst.util.{ArrayData, GenericArrayData}
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
+import org.datasyslab.geospark.utils.GeodesicArea
 import org.datasyslab.geospark.geometryObjects.Circle
 import org.datasyslab.geosparksql.utils.GeometrySerializer
 import org.geotools.geometry.jts.JTS
@@ -38,13 +39,15 @@ import org.opengis.referencing.operation.MathTransform
 import org.apache.spark.sql.geosparksql.UDT.GeometryUDT
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConversions._
+import scala.util.{Failure, Success, Try}
+
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.types.ArrayType
 import implicits._
 import org.geotools.factory.Hints
 import org.opengis.referencing.crs.CoordinateReferenceSystem
 
-import scala.util.{Failure, Success, Try}
 
 /**
   * Return the distance between two geometries.
@@ -929,6 +932,26 @@ case class ST_NumGeometries(inputExpressions: Seq[Expression])
   }
 
   override def dataType: DataType = IntegerType
+
+  override def children: Seq[Expression] = inputExpressions
+}
+
+/**
+  * Return the geodesic area measurement of a Geometry.
+  *
+  * @param inputExpressions
+  */
+case class ST_Geodesic_Area(inputExpressions: Seq[Expression])
+  extends Expression with CodegenFallback {
+  override def nullable: Boolean = false
+
+  override def eval(input: InternalRow): Any = {
+    assert(inputExpressions.length == 1)
+    val geometry = GeometrySerializer.deserialize(inputExpressions(0).eval(input).asInstanceOf[ArrayData])
+    return GeodesicArea.computeArea(geometry)
+  }
+
+  override def dataType: DataType = DoubleType
 
   override def children: Seq[Expression] = inputExpressions
 }

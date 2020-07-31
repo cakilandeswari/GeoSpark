@@ -51,7 +51,7 @@ import java.util.List;
  * For (2), provide `DedupParams` when instantiating JudgementBase object. If `DedupParams`
  * is specified, the implementation of the `match` method assumes that condition (1) holds.
  */
-abstract class JudgementBase
+public abstract class JudgementBase
         implements Serializable
 {
     private static final Logger log = LogManager.getLogger(JudgementBase.class);

@@ -25,6 +25,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.function.FlatMapFunction2;
 import org.datasyslab.geospark.enums.IndexType;
 import org.datasyslab.geospark.enums.JoinBuildSide;
 import org.datasyslab.geospark.geometryObjects.Circle;
@@ -42,6 +43,7 @@ import scala.Tuple2;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Iterator;
 
 public class JoinQuery
 {
@@ -134,13 +136,14 @@ public class JoinQuery
                 });
     }
 
-    public static final class JoinParams
+    public static final class JoinParams<U extends Object, T extends Object>
     {
         public final boolean useIndex;
         public final boolean considerBoundaryIntersection;
         public final boolean allowDuplicates;
         public final IndexType indexType;
         public final JoinBuildSide joinBuildSide;
+        public final FlatMapFunction2<Iterator<T>, Iterator<U>, Pair<U, T>> customJudgement;
 
         public JoinParams(boolean useIndex, boolean considerBoundaryIntersection, boolean allowDuplicates)
         {
@@ -149,6 +152,7 @@ public class JoinQuery
             this.allowDuplicates = allowDuplicates;
             this.indexType = IndexType.RTREE;
             this.joinBuildSide = JoinBuildSide.RIGHT;
+            this.customJudgement = null;
         }
 
         public JoinParams(boolean considerBoundaryIntersection, IndexType polygonIndexType, JoinBuildSide joinBuildSide)
@@ -158,6 +162,17 @@ public class JoinQuery
             this.allowDuplicates = false;
             this.indexType = polygonIndexType;
             this.joinBuildSide = joinBuildSide;
+            this.customJudgement = null;
+        }
+
+        public JoinParams( FlatMapFunction2<Iterator<T>, Iterator<U>, Pair<U, T>> customJudgement, boolean allowDuplicates)
+        {
+            this.customJudgement = customJudgement;
+            this.considerBoundaryIntersection = false;
+            this.allowDuplicates = allowDuplicates;
+            this.indexType = IndexType.RTREE;
+            this.joinBuildSide = JoinBuildSide.RIGHT;
+            this.useIndex = false;
         }
     }
 
@@ -463,7 +478,10 @@ public class JoinQuery
         final DedupParams dedupParams = partitioner.getDedupParams();
 
         final JavaRDD<Pair<U, T>> resultWithDuplicates;
-        if (joinParams.useIndex) {
+        if (joinParams.customJudgement != null) {
+            resultWithDuplicates = rightRDD.spatialPartitionedRDD.zipPartitions(leftRDD.spatialPartitionedRDD, joinParams.customJudgement);
+        }
+        else if (joinParams.useIndex) {
             if (rightRDD.indexedRDD != null) {
                 final RightIndexLookupJudgement judgement =
                         new RightIndexLookupJudgement(joinParams.considerBoundaryIntersection, dedupParams);

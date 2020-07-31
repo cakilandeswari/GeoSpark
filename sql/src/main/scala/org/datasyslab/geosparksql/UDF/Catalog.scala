@@ -72,7 +72,8 @@ object Catalog {
     ST_NumInteriorRings,
     ST_AddPoint,
     ST_RemovePoint,
-    ST_IsRing
+    ST_IsRing,
+    ST_Geodesic_Area
   )
 
   val aggregateExpressions:Seq[UserDefinedAggregateFunction] = Seq(

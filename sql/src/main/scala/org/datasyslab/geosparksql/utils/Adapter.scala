@@ -25,14 +25,22 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.datasyslab.geospark.spatialRDD.SpatialRDD
 
+import org.datasyslab.geospark.enums.{FileDataSplitter, GeometryType}
+import org.datasyslab.geospark.formatMapper.FormatMapper
+
+object Shape  extends Enumeration {
+  type Format = Value
+  val GEOMETRY,WKT,WKB,GEOJSON = Value
+}
+
 object Adapter {
 
   private def toJavaRdd(dataFrame: DataFrame, geometryColId: Int): JavaRDD[Geometry] = {
-    toRdd(dataFrame, geometryColId).toJavaRDD()
+    toRdd(dataFrame, geometryColId, Shape.GEOMETRY).toJavaRDD()
   }
 
   private def toJavaRdd(dataFrame: DataFrame): JavaRDD[Geometry] = {
-    toRdd(dataFrame, 0).toJavaRDD()
+    toRdd(dataFrame, 0, Shape.GEOMETRY).toJavaRDD()
   }
 
   private def toRdd(dataFrame: DataFrame): RDD[Geometry] = {
@@ -51,11 +59,28 @@ object Adapter {
     })
   }
 
-  private def toRdd(dataFrame: DataFrame, geometryColId: Int): RDD[Geometry] = {
+  private def toRdd(dataFrame: DataFrame, geometryColId: Int, shapeFormat: Shape.Format): RDD[Geometry] = {
     dataFrame.rdd.map[Geometry](f =>
     {
-      var geometry = f.get(geometryColId).asInstanceOf[Geometry]
-      var fieldSize = f.size
+      val geometry:Geometry = shapeFormat match {
+        case Shape.GEOMETRY => {
+          f.get(geometryColId).asInstanceOf[Geometry]
+        }
+        case Shape.WKT => {
+          val formatMapper = new FormatMapper(FileDataSplitter.WKT, false)
+          formatMapper.readGeometry(f.get(geometryColId).asInstanceOf[String])
+        }
+        case Shape.WKB => {
+          val formatMapper = new FormatMapper(FileDataSplitter.WKB, false)
+          formatMapper.readGeometry(f.get(geometryColId).asInstanceOf[String])
+        }
+        case Shape.GEOJSON => {
+          val formatMapper = new FormatMapper(FileDataSplitter.GEOJSON, false)
+          formatMapper.readGeometry(f.get(geometryColId).asInstanceOf[String])
+        }
+      }
+
+      val fieldSize = f.size
       var userData = ""
       if (fieldSize > 1) {
         // Add all attributes into geometry user data
@@ -68,17 +93,17 @@ object Adapter {
     })
   }
 
-  private def toRdd(dataFrame: DataFrame, geometryFieldName:String): RDD[Geometry] = {
+  private def toRdd(dataFrame: DataFrame, geometryFieldName:String, shapeFormat: Shape.Format): RDD[Geometry] = {
     val fieldList = dataFrame.schema.toList.map(f => f.name.toString)
     val geomColId = fieldList.indexOf(geometryFieldName)
     assert(geomColId >= 0)
-    toRdd(dataFrame, geomColId)
+    toRdd(dataFrame, geomColId, shapeFormat)
   }
 
   @deprecated( "use toSpatialRdd and append geometry column's name", "1.2" )
   def toSpatialRdd(dataFrame: DataFrame): SpatialRDD[Geometry] =
   {
-    toSpatialRdd(dataFrame, "geometry")
+    toSpatialRdd(dataFrame, "geometry", Shape.GEOMETRY)
   }
 
   /**
@@ -87,15 +112,15 @@ object Adapter {
     * @param geometryFieldName
     * @return
     */
-  def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String): SpatialRDD[Geometry] =
+  def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String, shapeFormat: Shape.Format): SpatialRDD[Geometry] =
   {
     // Delete the field that have geometry
     if (dataFrame.schema.size==1) {
-      toSpatialRdd(dataFrame, 0, List[String]())
+      toSpatialRdd(dataFrame, 0, List[String](),shapeFormat)
     }
     else {
       val fieldList = dataFrame.schema.toList.map(f => f.name.toString)
-      toSpatialRdd(dataFrame, geometryFieldName, fieldList.filter(p => !p.equalsIgnoreCase(geometryFieldName)))
+      toSpatialRdd(dataFrame, geometryFieldName, fieldList.filter(p => !p.equalsIgnoreCase(geometryFieldName)), shapeFormat)
     }
   }
 
@@ -105,16 +130,16 @@ object Adapter {
     * @param geometryColId
     * @return
     */
-  def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int): SpatialRDD[Geometry] =
+  def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int, shapeFormat: Shape.Format): SpatialRDD[Geometry] =
   {
     // Delete the field that have geometry
     if (dataFrame.schema.size==1) {
-      toSpatialRdd(dataFrame, 0, List[String]())
+      toSpatialRdd(dataFrame, 0, List[String](),shapeFormat)
     }
     else {
       val fieldList = dataFrame.schema.toList.map(f => f.name.toString)
       val geometryFieldName = fieldList(geometryColId)
-      toSpatialRdd(dataFrame, geometryColId, fieldList.filter(p => !p.equalsIgnoreCase(geometryFieldName)))
+      toSpatialRdd(dataFrame, geometryColId, fieldList.filter(p => !p.equalsIgnoreCase(geometryFieldName)),shapeFormat)
     }
   }
 
@@ -125,10 +150,10 @@ object Adapter {
     * @param fieldNames
     * @return
     */
-  def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int, fieldNames: List[String]): SpatialRDD[Geometry] =
+  def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int, fieldNames: List[String], shapeFormat: Shape.Format): SpatialRDD[Geometry] =
   {
     var spatialRDD = new SpatialRDD[Geometry]
-    spatialRDD.rawSpatialRDD = toRdd(dataFrame, geometryColId).toJavaRDD()
+    spatialRDD.rawSpatialRDD = toRdd(dataFrame, geometryColId, shapeFormat).toJavaRDD()
     import scala.collection.JavaConversions._
     if (fieldNames.nonEmpty) spatialRDD.fieldNames = fieldNames
     else spatialRDD.fieldNames = null
@@ -142,10 +167,10 @@ object Adapter {
     * @param fieldNames
     * @return
     */
-  def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String, fieldNames: List[String]): SpatialRDD[Geometry] =
+  def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String, fieldNames: List[String], shapeFormat: Shape.Format): SpatialRDD[Geometry] =
   {
     var spatialRDD = new SpatialRDD[Geometry]
-    spatialRDD.rawSpatialRDD = toRdd(dataFrame, geometryFieldName).toJavaRDD()
+    spatialRDD.rawSpatialRDD = toRdd(dataFrame, geometryFieldName, shapeFormat).toJavaRDD()
     import scala.collection.JavaConversions._
     if (fieldNames.nonEmpty) spatialRDD.fieldNames = fieldNames
     else spatialRDD.fieldNames = null

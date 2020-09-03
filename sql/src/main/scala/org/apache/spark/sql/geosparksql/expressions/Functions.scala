@@ -955,3 +955,36 @@ case class ST_Geodesic_Area(inputExpressions: Seq[Expression])
 
   override def children: Seq[Expression] = inputExpressions
 }
+
+
+/**
+  * Return the geodesic distance between two geometries.
+  *
+  * @param inputExpressions This function takes two geometries and calculates the geodesic distance between two objects.
+  */
+case class ST_Geodesic_Distance(inputExpressions: Seq[Expression])
+  extends Expression with CodegenFallback {
+
+  // This is a binary expression
+  assert(inputExpressions.length == 2)
+
+  override def nullable: Boolean = false
+
+  override def toString: String = s" **${ST_Distance.getClass.getName}**  "
+
+  override def children: Seq[Expression] = inputExpressions
+
+  override def eval(inputRow: InternalRow): Any = {
+    assert(inputExpressions.length == 2)
+
+    val leftArray = inputExpressions(0).eval(inputRow).asInstanceOf[ArrayData]
+    val rightArray = inputExpressions(1).eval(inputRow).asInstanceOf[ArrayData]
+
+    val leftGeometry = GeometrySerializer.deserialize(leftArray)
+    val rightGeometry = GeometrySerializer.deserialize(rightArray)
+
+    return GeodesicArea.computeDistance(leftGeometry, rightGeometry);
+  }
+
+  override def dataType = DoubleType
+}

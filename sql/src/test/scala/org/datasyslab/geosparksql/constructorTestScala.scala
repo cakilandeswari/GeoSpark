@@ -128,7 +128,7 @@ class constructorTestScala extends TestBaseScala {
       import org.apache.spark.sql.functions.{callUDF, col}
       df = df.withColumn("geometry", callUDF("ST_GeomFromWKT", col("geometry")))
       df.show()
-      var spatialRDD2 = Adapter.toSpatialRdd(df, "geometry",Shape.GEOMETRY)
+      var spatialRDD2 = Adapter.toSpatialRdd(df, "geometry")
       println(spatialRDD2.rawSpatialRDD.take(1).get(0).getUserData)
       Adapter.toDf(spatialRDD2, sparkSession).show()
     }

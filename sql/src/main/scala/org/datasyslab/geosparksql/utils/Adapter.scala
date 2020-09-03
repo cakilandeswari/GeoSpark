@@ -112,6 +112,52 @@ object Adapter {
     * @param geometryFieldName
     * @return
     */
+  def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String): SpatialRDD[Geometry] =
+  {
+    toSpatialRdd(dataFrame, geometryFieldName, Shape.GEOMETRY )
+  }
+
+  /**
+    * Convert a Spatial DF to a Spatial RDD. The geometry column can be at any place in the DF
+    * @param dataFrame
+    * @param geometryColId
+    * @return
+    */
+  def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int): SpatialRDD[Geometry] =
+  {
+    toSpatialRdd(dataFrame, geometryColId, Shape.GEOMETRY)
+  }
+
+  /**
+    * Convert a Spatial DF to a Spatial RDD with a list of user-supplied col names (except geom col). The geometry column can be at any place in the DF.
+    * @param dataFrame
+    * @param geometryColId
+    * @param fieldNames
+    * @return
+    */
+  def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int, fieldNames: List[String]): SpatialRDD[Geometry] =
+  {
+    toSpatialRdd(dataFrame, geometryColId, fieldNames, Shape.GEOMETRY)
+  }
+
+  /**
+    * Convert a Spatial DF to a Spatial RDD with a list of user-supplied col names (except geom col). The geometry column can be at any place in the DF.
+    * @param dataFrame
+    * @param geometryFieldName
+    * @param fieldNames
+    * @return
+    */
+  def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String, fieldNames: List[String]): SpatialRDD[Geometry] = {
+    toSpatialRdd(dataFrame, geometryFieldName,fieldNames, Shape.GEOMETRY )
+  }
+
+  /**
+    * Convert a Spatial DF to a Spatial RDD. The geometry column can be at any place in the DF
+    * @param dataFrame
+    * @param geometryFieldName
+    * @param shapeFormat
+    * @return
+    */
   def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String, shapeFormat: Shape.Format): SpatialRDD[Geometry] =
   {
     // Delete the field that have geometry
@@ -128,6 +174,7 @@ object Adapter {
     * Convert a Spatial DF to a Spatial RDD. The geometry column can be at any place in the DF
     * @param dataFrame
     * @param geometryColId
+    * @param shapeFormat
     * @return
     */
   def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int, shapeFormat: Shape.Format): SpatialRDD[Geometry] =
@@ -148,6 +195,7 @@ object Adapter {
     * @param dataFrame
     * @param geometryColId
     * @param fieldNames
+    * @param shapeFormat
     * @return
     */
   def toSpatialRdd(dataFrame: DataFrame, geometryColId: Int, fieldNames: List[String], shapeFormat: Shape.Format): SpatialRDD[Geometry] =
@@ -165,11 +213,12 @@ object Adapter {
     * @param dataFrame
     * @param geometryFieldName
     * @param fieldNames
+    * @param shapeFormat
     * @return
     */
   def toSpatialRdd(dataFrame: DataFrame, geometryFieldName:String, fieldNames: List[String], shapeFormat: Shape.Format): SpatialRDD[Geometry] =
   {
-    var spatialRDD = new SpatialRDD[Geometry]
+    val spatialRDD = new SpatialRDD[Geometry]
     spatialRDD.rawSpatialRDD = toRdd(dataFrame, geometryFieldName, shapeFormat).toJavaRDD()
     import scala.collection.JavaConversions._
     if (fieldNames.nonEmpty) spatialRDD.fieldNames = fieldNames
@@ -181,14 +230,14 @@ object Adapter {
     val rowRdd = spatialRDD.rawSpatialRDD.rdd.map[Row](f => Row.fromSeq(f.toString.split("\t",-1).toSeq))
     if (fieldNames!=null && fieldNames.nonEmpty)
     {
-      var fieldArray = new Array[StructField](fieldNames.size+1)
+      val fieldArray = new Array[StructField](fieldNames.size+1)
       fieldArray(0) = StructField("geometry", StringType)
       for (i <- 1 until fieldArray.length) fieldArray(i) = StructField(fieldNames(i-1), StringType)
       val schema = StructType(fieldArray)
       sparkSession.createDataFrame(rowRdd, schema)
     }
     else {
-      var fieldArray = new Array[StructField](rowRdd.take(1)(0).size)
+      val fieldArray = new Array[StructField](rowRdd.take(1)(0).size)
       fieldArray(0) = StructField("geometry", StringType)
       for (i <- 1 until fieldArray.length) fieldArray(i) = StructField("_c" + i, StringType)
       val schema = StructType(fieldArray)

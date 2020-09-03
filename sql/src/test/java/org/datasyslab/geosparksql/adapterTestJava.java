@@ -26,7 +26,6 @@
 
 package org.datasyslab.geosparksql;
 
-import com.vividsolutions.jts.geom.Geometry;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
@@ -89,7 +88,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_PointFromText(inputtable._c0,\",\") as arealandmark from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -103,7 +102,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_Point(cast(inputtable._c0 as Decimal(24,20)),cast(inputtable._c1 as Decimal(24,20))) as arealandmark from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -117,7 +116,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_Point(cast(inputtable._c0 as Decimal(24,20)),cast(inputtable._c1 as Decimal(24,20))) as arealandmark from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -131,7 +130,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_GeomFromWKT(inputtable._c0) as usacounty from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -145,7 +144,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_GeomFromWKT(inputtable._c0) as usacounty from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -159,7 +158,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_GeomFromWKB(inputtable._c0) as usacounty from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -184,7 +183,7 @@ public class adapterTestJava
         Dataset<Row> spatialDf = sparkSession.sql("select ST_GeomFromWKB(inputtable._c0) as usacounty from inputtable");
         spatialDf.show();
         spatialDf.printSchema();
-        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty",Shape.GEOMETRY());
+        SpatialRDD spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty");
         spatialRDD.analyze();
         Adapter.toDf(spatialRDD, sparkSession).show();
     }
@@ -204,13 +203,13 @@ public class adapterTestJava
         Dataset<Row> pointCsvDf = sparkSession.read().format("csv").option("delimiter", ",").option("header", "false").load(csvPointInputLocation);
         pointCsvDf.createOrReplaceTempView("pointtable");
         Dataset<Row> pointDf = sparkSession.sql("select ST_Point(cast(pointtable._c0 as Decimal(24,20)),cast(pointtable._c1 as Decimal(24,20))) as arealandmark from pointtable");
-        SpatialRDD pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark",Shape.GEOMETRY());
+        SpatialRDD pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark");
         pointRDD.analyze();
 
         Dataset<Row> polygonWktDf = sparkSession.read().format("csv").option("delimiter", "\t").option("header", "false").load(mixedWktGeometryInputLocation);
         polygonWktDf.createOrReplaceTempView("polygontable");
         Dataset<Row> polygonDf = sparkSession.sql("select ST_GeomFromWKT(polygontable._c0) as usacounty from polygontable");
-        SpatialRDD polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty",Shape.GEOMETRY());
+        SpatialRDD polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty");
         polygonRDD.analyze();
 
         pointRDD.spatialPartitioning(GridType.QUADTREE);
@@ -232,13 +231,13 @@ public class adapterTestJava
         Dataset<Row> pointCsvDf = sparkSession.read().format("csv").option("delimiter", ",").option("header", "false").load(csvPointInputLocation);
         pointCsvDf.createOrReplaceTempView("pointtable");
         Dataset<Row> pointDf = sparkSession.sql("select ST_Point(cast(pointtable._c0 as Decimal(24,20)),cast(pointtable._c1 as Decimal(24,20))) as arealandmark from pointtable");
-        SpatialRDD pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark",Shape.GEOMETRY());
+        SpatialRDD pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark");
         pointRDD.analyze();
 
         Dataset<Row> polygonWktDf = sparkSession.read().format("csv").option("delimiter", "\t").option("header", "false").load(mixedWktGeometryInputLocation);
         polygonWktDf.createOrReplaceTempView("polygontable");
         Dataset<Row> polygonDf = sparkSession.sql("select ST_GeomFromWKT(polygontable._c0) as usacounty from polygontable");
-        SpatialRDD polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty",Shape.GEOMETRY());
+        SpatialRDD polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty");
         polygonRDD.analyze();
 
         CircleRDD circleRDD = new CircleRDD(polygonRDD, 0.2);

@@ -31,6 +31,7 @@ import org.datasyslab.geospark.formatMapper.shapefileParser.ShapefileReader
 import org.datasyslab.geospark.spatialOperator.JoinQuery
 import org.datasyslab.geospark.spatialRDD.{CircleRDD, PolygonRDD}
 import org.datasyslab.geosparksql.utils.Adapter
+import org.datasyslab.geosparksql.utils.Shape
 
 class adapterTestScala extends TestBaseScala {
 
@@ -43,7 +44,7 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select ST_PointFromText(inputtable._c0,\",\") as arealandmark from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark")
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark", Shape.GEOMETRY)
       spatialRDD.analyze()
       Adapter.toDf(spatialRDD, sparkSession).show()
     }
@@ -55,7 +56,7 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select \'123\', \'456\', ST_PointFromText(inputtable._c0,\",\") as arealandmark, \'789\' from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, 2)
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, 2, Shape.GEOMETRY)
       spatialRDD.analyze()
       val newDf = Adapter.toDf(spatialRDD, sparkSession)
       newDf.show()
@@ -69,7 +70,7 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select \'123\', \'456\', ST_PointFromText(inputtable._c0,\",\") as arealandmark, \'789\' from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark")
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark", Shape.GEOMETRY)
       spatialRDD.analyze()
       val newDf = Adapter.toDf(spatialRDD, sparkSession)
       newDf.show()
@@ -83,7 +84,7 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select ST_Point(cast(inputtable._c0 as Decimal(24,20)),cast(inputtable._c1 as Decimal(24,20))) as arealandmark from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark")
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark", Shape.GEOMETRY)
       assert(Adapter.toDf(spatialRDD, sparkSession).columns.length==1)
       Adapter.toDf(spatialRDD, sparkSession).show()
     }
@@ -96,7 +97,7 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select ST_Point(cast(inputtable._c0 as Decimal(24,20)),cast(inputtable._c1 as Decimal(24,20))) as arealandmark from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark")
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "arealandmark", Shape.GEOMETRY)
       spatialRDD.analyze()
       assert(Adapter.toDf(spatialRDD, sparkSession).columns.length==1)
       Adapter.toDf(spatialRDD, sparkSession).show()
@@ -110,7 +111,7 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select ST_GeomFromWKT(inputtable._c0) as usacounty from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty")
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty", Shape.GEOMETRY)
       spatialRDD.analyze()
       Adapter.toDf(spatialRDD, sparkSession).show()
       assert(Adapter.toDf(spatialRDD, sparkSession).columns.length==1)
@@ -124,9 +125,21 @@ class adapterTestScala extends TestBaseScala {
       var spatialDf = sparkSession.sql("select ST_GeomFromWKT(inputtable._c0) as usacounty, inputtable._c3, inputtable._c5 from inputtable")
       spatialDf.show()
       spatialDf.printSchema()
-      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty")
+      var spatialRDD = Adapter.toSpatialRdd(spatialDf, "usacounty", Shape.GEOMETRY)
       spatialRDD.analyze()
       assert(Adapter.toDf(spatialRDD, sparkSession).columns.length==3)
+      Adapter.toDf(spatialRDD, sparkSession).show()
+    }
+
+
+    it("Read mixed WKT geometries into a SpatialRDD without intermediate data frame") {
+      var df = sparkSession.read.format("csv").option("delimiter", "\t").option("header", "false").load(mixedWktGeometryInputLocation)
+      df.show()
+      df.createOrReplaceTempView("inputtable")
+      var spatialRDD = Adapter.toSpatialRdd(df.select("_c0"), "_c0", Shape.WKT)
+      spatialRDD.analyze()
+      Adapter.toDf(spatialRDD, sparkSession).show()
+      assert(Adapter.toDf(spatialRDD, sparkSession).columns.length==1)
       Adapter.toDf(spatialRDD, sparkSession).show()
     }
 
@@ -159,13 +172,13 @@ class adapterTestScala extends TestBaseScala {
       val polygonWktDf = sparkSession.read.format("csv").option("delimiter", "\t").option("header", "false").load(mixedWktGeometryInputLocation)
       polygonWktDf.createOrReplaceTempView("polygontable")
       val polygonDf = sparkSession.sql("select ST_GeomFromWKT(polygontable._c0) as usacounty, 'abc' as abc, 'def' as def from polygontable")
-      val polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty")
+      val polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty", Shape.GEOMETRY)
       polygonRDD.analyze()
 
       val pointCsvDF = sparkSession.read.format("csv").option("delimiter", ",").option("header", "false").load(arealmPointInputLocation)
       pointCsvDF.createOrReplaceTempView("pointtable")
       val pointDf = sparkSession.sql("select ST_Point(cast(pointtable._c0 as Decimal(24,20)),cast(pointtable._c1 as Decimal(24,20))) as arealandmark from pointtable")
-      val pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark")
+      val pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark", Shape.GEOMETRY)
       pointRDD.analyze()
 
       pointRDD.spatialPartitioning(GridType.QUADTREE)
@@ -186,13 +199,13 @@ class adapterTestScala extends TestBaseScala {
       var pointCsvDF = sparkSession.read.format("csv").option("delimiter", ",").option("header", "false").load(arealmPointInputLocation)
       pointCsvDF.createOrReplaceTempView("pointtable")
       var pointDf = sparkSession.sql("select ST_Point(cast(pointtable._c0 as Decimal(24,20)),cast(pointtable._c1 as Decimal(24,20))) as arealandmark from pointtable")
-      var pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark")
+      var pointRDD = Adapter.toSpatialRdd(pointDf, "arealandmark", Shape.GEOMETRY)
       pointRDD.analyze()
 
       var polygonWktDf = sparkSession.read.format("csv").option("delimiter", "\t").option("header", "false").load(mixedWktGeometryInputLocation)
       polygonWktDf.createOrReplaceTempView("polygontable")
       var polygonDf = sparkSession.sql("select ST_GeomFromWKT(polygontable._c0) as usacounty from polygontable")
-      var polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty")
+      var polygonRDD = Adapter.toSpatialRdd(polygonDf, "usacounty", Shape.GEOMETRY)
       polygonRDD.analyze()
       var circleRDD = new CircleRDD(polygonRDD, 0.2)
 

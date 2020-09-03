@@ -2,6 +2,8 @@ package org.datasyslab.geospark.utils;
 
 import com.vividsolutions.jts.geom.*;
 import net.sf.geographiclib.Geodesic;
+import net.sf.geographiclib.GeodesicData;
+import net.sf.geographiclib.GeodesicMask;
 import net.sf.geographiclib.PolygonArea;
 
 public class GeodesicArea {
@@ -65,5 +67,12 @@ public class GeodesicArea {
         return outerArea;
     }
 
+
+    public static double computeDistance(Geometry leftGeometry, Geometry rightGeometry) {
+        Point leftCentroid  = leftGeometry.getCentroid();
+        Point rightCentroid = rightGeometry.getCentroid();
+        GeodesicData g = Geodesic.WGS84.Inverse(leftCentroid.getY(), leftCentroid.getX(), rightCentroid.getY(), rightCentroid.getX(), GeodesicMask.DISTANCE);
+        return  g.s12;
+    }
 
 }

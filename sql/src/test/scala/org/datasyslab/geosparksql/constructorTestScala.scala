@@ -29,7 +29,7 @@ package org.datasyslab.geosparksql
 import com.vividsolutions.jts.geom.Geometry
 import org.datasyslab.geospark.formatMapper.GeoJsonReader
 import org.datasyslab.geospark.formatMapper.shapefileParser.ShapefileReader
-import org.datasyslab.geosparksql.utils.Adapter
+import org.datasyslab.geosparksql.utils.{Adapter, Shape}
 
 class constructorTestScala extends TestBaseScala {
 
@@ -128,7 +128,7 @@ class constructorTestScala extends TestBaseScala {
       import org.apache.spark.sql.functions.{callUDF, col}
       df = df.withColumn("geometry", callUDF("ST_GeomFromWKT", col("geometry")))
       df.show()
-      var spatialRDD2 = Adapter.toSpatialRdd(df, "geometry")
+      var spatialRDD2 = Adapter.toSpatialRdd(df, "geometry",Shape.GEOMETRY)
       println(spatialRDD2.rawSpatialRDD.take(1).get(0).getUserData)
       Adapter.toDf(spatialRDD2, sparkSession).show()
     }
